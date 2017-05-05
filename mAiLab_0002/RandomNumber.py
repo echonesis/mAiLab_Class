@@ -32,20 +32,30 @@ if __name__ == '__main__':
         print 'Case for N =', n1[i]
         print 'Used Sys Time =', usedTime[i], '(s)'
 
-    '''
-    For Basic part, the following is the sample output:
-    Basic 1> Generate 5 Random Number
-    [0.38554052795997207, 0.6136228008082, 0.6787578153203891, 0.6489740564293955, 0.7710917185546308]
-    Basic 2>
-    Case for N = 10
-    Mean = -0.312901186771 ; STD = 0.466520661607
-    Case for N = 100
-    Mean = -0.0747169104398 ; STD = 0.565906534055
-    Case for N = 1000
-    Mean = -0.0157894681898 ; STD = 0.592963060275
-    Case for N = 10000
-    Mean = -0.0011872676824 ; STD = 0.5807030628
-    Case for N = 100000
-    Mean = -0.0019084834785 ; STD = 0.576954618766
-    '''
-
+'''
+Sample Output:
+Basic 1> Generate 5 Random Number
+[0.8517352415235713, 0.9608042046044872, 0.1512693660183837, 0.6074746239442333, 0.5267800150194317]
+Basic 2>
+Case for N = 10
+Mean = -0.240647969028 ; STD = 0.424100623283
+Case for N = 100
+Mean = -0.0732104451873 ; STD = 0.596035030544
+Case for N = 1000
+Mean = 0.0287190524504 ; STD = 0.58627480244
+Case for N = 10000
+Mean = -0.00509101610347 ; STD = 0.578908223166
+Case for N = 100000
+Mean = 0.00342896915716 ; STD = 0.576555864097
+Advanced 1>
+Case for N = 10
+Used Sys Time = 1.00135803223e-05 (s)
+Case for N = 100
+Used Sys Time = 4.10079956055e-05 (s)
+Case for N = 1000
+Used Sys Time = 0.000274896621704 (s)
+Case for N = 10000
+Used Sys Time = 0.00268888473511 (s)
+Case for N = 100000
+Used Sys Time = 0.0347440242767 (s)
+'''
