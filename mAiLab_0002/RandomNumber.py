@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/python
 
 def simpleGenRandomNumber(n, llimit=0, ulimit=1):
     import random
