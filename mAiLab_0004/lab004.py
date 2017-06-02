@@ -21,7 +21,7 @@ def mnist_read(imgFile, labelFile):
 def mnist_show(imgMat):
     import matplotlib.pyplot as plt
     plt.imshow(imgMat, cmap='Greys')
-    plt.show()
+    #plt.show()
 
 def mnist_im2str(imgMat):
     '''
@@ -35,73 +35,131 @@ def mnist_im2str(imgMat):
         strResult.append(' '.join(tmpResult))
     return '\n'.join(strResult)
 
-if __name__ == '__main__':
-    targetFiles = ['train-images-idx3-ubyte', 'train-labels-idx1-ubyte', 't10k-images-idx3-ubyte', 't10k-labels-idx1-ubyte']
-    destDir = './'
-    import os
-    remainFiles = list()
-    for obj in targetFiles:
-        if not os.path.exists(destDir + obj):
-            remainFiles.append(obj)
-    if len(remainFiles) == 0:
-        print '[Status] All candidates exist in destination.  Go ahead.'
-    else:
-        print 'Download target MNIST files...'
-        import urllib
-        urlrepo = "http://yann.lecun.com/exdb/mnist/"
-        extFormat = '.gz'
-        for obj in remainFiles:
-            urllib.urlretrieve(urlrepo + obj + extFormat, filename="./" + obj + extFormat)
-        print '[Status] Download complete.'
-
-        print
-        print '[Status] Unzipping datasets...'
-        import gzip
-        for obj in remainFiles:
-            inFile = gzip.open(destDir + obj + extFormat, 'rb')
-            outFile = open(destDir + obj, 'wb')
-            outFile.write(inFile.read())
-            inFile.close()
-            outFile.close()
-        print '[Status] Unzipping step is complete.'
-
-    # Question 2
-    target = list(mnist_read('train-images-idx3-ubyte', 'train-labels-idx1-ubyte'))
-    label1, img1 = target[0]
-    mnist_show(img1)
-    print mnist_im2str(img1)
-
-    # Question 3
-    import numpy as np
-    imgMat = np.zeros([28, 28])
-    labels = list()
-    for i in range(10):
-        label, img = target[i]
-        imgMat += img
-        labels.append(label)
-    imgMat = imgMat / 10
-    print mnist_im2str(imgMat.astype(np.uint8))
-    mnist_show(imgMat)
-
-    # Question 4
-    print '[Result] Labels:', labels
-    print '[Result] Mean of labels:{:.2f}'.format(np.mean(labels))
-
-    # Question 5
-    newSize = 32
+def mnist_padding(imgMat, pad_size):
+    # padding for extending the originial image and fill with zeros
+    newSize = pad_size
     newImg = np.zeros([newSize, newSize])
-    rawSize = img1.shape[0]
+    rawSize = imgMat.shape[0]
     firstLabel = (newSize - rawSize) / 2
     for iRow in range(rawSize):
         for iCol in range(rawSize):
-            newImg[iRow+firstLabel, iCol+firstLabel] = img1[iRow, iCol]
-    mnist_show(newImg)
-    print mnist_im2str(newImg.astype(np.uint8))
+            newImg[iRow+firstLabel, iCol+firstLabel] = imgMat[iRow, iCol]
+    return newImg
 
-    # Advanced 1
+def G_filter(imgMat, conv_filter):
+    import numpy as np
+    #conv_filter = np.array([[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]])
+    conv_size = conv_filter.shape[0]
+    newImg = np.zeros([imgMat.shape[0]-conv_size+1, imgMat.shape[1]-conv_size+1])
+    for iRow in range(newImg.shape[0]):
+        for iCol in range(newImg.shape[1]):
+            newImg[iRow, iCol] = sum(sum(np.multiply(imgMat[iRow:iRow+conv_size, iCol:iCol+conv_size], conv_filter))) / np.prod(conv_filter.shape)
+    return newImg
+
+def Gx(imgMat, conv_filter=None):
+    import numpy as np
+    if conv_filter is None:
+        conv_filter = np.array([[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]])
+    return G_filter(imgMat, conv_filter)
+
+def Gy(imgMat, conv_filter=None):
+    import numpy as np
+    if conv_filter is None:
+        conv_filter = np.array([[1, 2, 1], [0, 0, 0], [-1, -2, -1]])
+    return G_filter(imgMat, conv_filter)
+
+def genSobelFilter(filter_size):
+    import numpy as np
+    # Based on Sobel filter kernel
+    # the ordering would be from left to right, from up to bottom as https://en.wikipedia.org/wiki/Sobel_operator
+    result = list()
+    # For G_x
+    if filter_size % 2 == 1:
+        tmpResult = list()
+        flist = range(filter_size / 2, -1*filter_size/2, -1)
+        print 'FList:', flist
+        for i in range(filter_size):
+            if i == 0:
+                tmpResult.append(flist)
+            elif i <= filter_size / 2:
+                newList = flist[:]
+                for i in range(len(newList)):
+                    if newList[i] > 0:
+                        newList[i] = newList[i] + 1
+                    elif newList[i] < 0:
+                        newList[i] = newList[i] - 1
+                tmpResult.append(newList)
+                flist = newList[:]
+
+            else:
+                newList = flist[:]
+                for i in range(len(newList)):
+                    if newList[i] > 0:
+                        newList[i] = newList[i] - 1
+                    elif newList[i] < 0:
+                        newList[i] = newList[i] + 1
+                tmpResult.append(newList)
+                flist = newList[:]
+        gx_filter = np.array(tmpResult)
+        gy_filter = gx_filter.transpose()
+        result = [gx_filter, gy_filter]
+
+    else:
+        print '[Error] The Sobel filter generation is failed.'
+        print '        Please try another filter size number.  Thanks.'
+    return result
+
+if __name__ == '__main__':
+    import numpy as np
+    import matplotlib.pyplot as plt
+    # Question 1
+    # Filter Settings
+    target = list(mnist_read('train-images-idx3-ubyte', 'train-labels-idx1-ubyte'))
+    plt.figure()
+    for i in range(5):
+        label, img = target[i]
+        Gx_result = Gx(mnist_padding(img, 30))
+        #print mnist_im2str(Gx_result.astype(np.uint8))
+        Gx_result.astype(np.uint8)
+        Gy_result = Gy(mnist_padding(img, 30))
+        Gy_result.astype(np.uint8)
+        #plt.figure()
+        plt.subplot(2, 5, i+1)
+        mnist_show(Gx_result)
+        #plt.show()
+        plt.subplot(2, 5, i+6)
+        #plt.figure()
+        mnist_show(Gy_result)
+        #plt.show()
+    plt.show()
+
+    # Question 2
+    label1, img1 = target[0]
+    testcase = [(32, 5), (34, 7), (36, 9)]
+    for obj in testcase:
+        paddingResult = mnist_padding(img1, obj[0])
+        sobelFilter = genSobelFilter(obj[1])
+        Gx_result = G_filter(paddingResult, sobelFilter[0])
+        Gy_result = G_filter(paddingResult, sobelFilter[1])
+        print 'For case:', obj
+        print 'Gx result matrix:'
+        print mnist_im2str(Gx_result.astype(np.uint8))
+        print 'Gy result matrix:'
+        print mnist_im2str(Gy_result.astype(np.uint8))
+
+        # I need figures to explain the filtering effect.
+        plt.figure()
+        plt.subplot(2, 1, 1)
+        mnist_show(Gx_result)
+        plt.subplot(2, 1, 2)
+        mnist_show(Gy_result)
+        plt.show()
+
+    # Advanced Question 1
     '''
-    Matplotlib doesn't support the BMP-format, so we should choose PIL/Pillow to do BMP-saving.
+    For edge detection, we need to figure out the boundary between two classes.
+    And that's why we set positive and negative weights at the opposite sides of the middle line.
+    If all the regions are so-called flat, most of values would remain at the same level, and we will get no spike points away from zero.
+    However, if the so-called edge appears, one side would be different from the other side, and the weighted value would be obvious higher or lower than zero.
+    The principle is similar to the Haar kernel, and the Haar is much simpler since Sobel filter considers the region information.
     '''
-    from PIL import Image
-    outputFig = Image.fromarray(img1)
-    outputFig.save('advfig.bmp')
