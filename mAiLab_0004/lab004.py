@@ -36,6 +36,7 @@ def mnist_im2str(imgMat):
     return '\n'.join(strResult)
 
 def mnist_padding(imgMat, pad_size):
+    import numpy as np
     # padding for extending the originial image and fill with zeros
     newSize = pad_size
     newImg = np.zeros([newSize, newSize])
